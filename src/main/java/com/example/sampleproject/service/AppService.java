@@ -1,22 +1,25 @@
 package com.example.sampleproject.service;
 
-import com.example.sampleproject.entity.AdvisorRequest;
-import com.example.sampleproject.entity.Student;
-import com.example.sampleproject.entity.Teacher;
-import com.example.sampleproject.models.AdvisorRequestModel;
-import com.example.sampleproject.models.CustomResponse;
-import com.example.sampleproject.models.StudentResponseModel;
-import com.example.sampleproject.repository.AdvisorRequestRepository;
-import com.example.sampleproject.repository.StudentRepository;
-import com.example.sampleproject.repository.TeacherRepository;
+import com.example.sampleproject.entity.*;
+import com.example.sampleproject.models.*;
+import com.example.sampleproject.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class AppService {
+
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private TeacherRepository teacherRepository;
@@ -24,10 +27,41 @@ public class AppService {
     private StudentRepository studentRepository;
 
     @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
     private AdvisorRequestRepository advisorRequestRepository;
 
-    public Teacher saveTeacher(Teacher teacher) {
-        return teacherRepository.save(teacher);
+    public Object saveTeacher(UserRequestModel userRequestModel) {
+
+        User existingUser = userRepository.findByUserName(userRequestModel.getEmail());
+
+        if (existingUser == null) {
+            User user = new User();
+
+            Role role = roleRepository.findByRoleName("Teacher");
+
+            Set<Role> userRoles = new HashSet<>();
+            userRoles.add(role);
+
+            user.setRoles(userRoles);
+            user.setUserName(userRequestModel.getEmail());
+            user.setEnable(true);
+            user.setUserPassword(getEncodedPassword(userRequestModel.getPassword()));
+            user.setName(userRequestModel.getName());
+
+            userRepository.save(user);
+
+            Teacher teacher = Teacher.builder()
+                    .teacherName(userRequestModel.getName())
+                    .email(userRequestModel.getEmail())
+                    .departmentName(userRequestModel.getDepartmentName())
+                    .phoneNumber(userRequestModel.getPhoneNumber()).build();
+
+            return teacherRepository.save(teacher);
+        }else {
+            return new CustomResponse("User already exists",false);
+        }
     }
 
     public Teacher updateTeacher(Teacher teacher) {
@@ -99,8 +133,6 @@ public class AppService {
 
             teacherRepository.save(existingTeacher);
 
-
-
             AdvisorRequest advisorRequest = advisorRequestRepository.findByTeacherId(teacherId);
             if (advisorRequest != null){
                 advisorRequest.getStudents().remove(studentRepository.findById(studentId).get());
@@ -119,8 +151,37 @@ public class AppService {
 
     }
 
-    public Student saveStudent(Student student) {
-        return studentRepository.save(student);
+    public Object saveStudent(UserRequestModel userRequestModel) {
+
+        User existingUser = userRepository.findByUserName(userRequestModel.getEmail());
+
+        if (existingUser == null) {
+
+            User user = new User();
+
+            Role role = roleRepository.findByRoleName("Student");
+
+            Set<Role> userRoles = new HashSet<>();
+            userRoles.add(role);
+
+            user.setRoles(userRoles);
+            user.setUserName(userRequestModel.getEmail());
+            user.setEnable(true);
+            user.setUserPassword(getEncodedPassword(userRequestModel.getPassword()));
+            user.setName(userRequestModel.getName());
+
+            userRepository.save(user);
+
+            Student student = Student.builder()
+                    .studentName(userRequestModel.getName())
+                    .email(userRequestModel.getEmail())
+                    .departmentName(userRequestModel.getDepartmentName())
+                    .phoneNumber(userRequestModel.getPhoneNumber()).build();
+
+            return studentRepository.save(student);
+        }else {
+            return new CustomResponse("User already exists",false);
+        }
     }
 
     public Student updateStudent(Student student) {
@@ -226,4 +287,97 @@ public class AppService {
         }
     }
 
+
+    public void initRoleAndAdmin(){
+
+        List<Role> roles = roleRepository.findAll();
+
+        if (roles == null || roles.isEmpty()) {
+            roleRepository.save(Role.builder().roleName("Admin").build());
+            roleRepository.save(Role.builder().roleName("Teacher").build());
+            roleRepository.save(Role.builder().roleName("Student").build());
+        }
+
+
+        User existingUser = userRepository.findByUserName("admin@gmail.com");
+
+        if (existingUser==null) {
+            User user = new User();
+            user.setUserName("admin@gmail.com");
+            user.setName("Admin User");
+            user.setEnable(true);
+            user.setUserPassword(passwordEncoder.encode("@dm!nUs3r"));
+
+            userRepository.save(user);
+        }
+    }
+
+    public String getEncodedPassword(String password) {
+        return passwordEncoder.encode(password);
+    }
+
+    public String changePassword(PasswordModel passwordModel) {
+        User user = userRepository.findByUserName(passwordModel.getEmail());
+
+        if (user!=null) {
+            if (passwordEncoder.matches(passwordModel.getOldPassword(), user.getUserPassword())) {
+                user.setUserPassword(getEncodedPassword(passwordModel.getNewPassword()));
+                userRepository.save(user);
+                return "Password Changed Successfully.";
+            } else {
+                return "Doesn't matched old password.";
+            }
+        }else {
+            return "User not found with this email.";
+        }
+    }
+
+    public String deleteUser(String emailAddress) {
+
+        Teacher teacher = teacherRepository.findByEmail(emailAddress);
+
+        Student student = studentRepository.findByEmail(emailAddress);
+
+        User user = userRepository.findByUserName(emailAddress);
+
+        if (teacher != null){
+            teacherRepository.delete(teacher);
+        }
+
+        if (student != null){
+            studentRepository.delete(student);
+        }
+
+        if (user != null){
+            userRepository.delete(user);
+        }
+
+        return "User deleted";
+    }
+
+    public String deactivateUser(String emailAddress) {
+
+        User user = userRepository.findByUserName(emailAddress);
+
+        if (user != null){
+            user.setEnable(false);
+            userRepository.save(user);
+            return "User deactivated";
+        }else {
+            return "User not found!";
+        }
+
+    }
+
+    public String activateUser(String emailAddress) {
+        User user = userRepository.findByUserName(emailAddress);
+
+        if (user != null){
+            user.setEnable(true);
+            userRepository.save(user);
+            return "User activated";
+        }else {
+            return "User not found!";
+        }
+    }
 }

@@ -3,13 +3,13 @@ package com.example.sampleproject.controller;
 import com.example.sampleproject.entity.AdvisorRequest;
 import com.example.sampleproject.entity.Student;
 import com.example.sampleproject.entity.Teacher;
-import com.example.sampleproject.models.AdvisorRequestModel;
-import com.example.sampleproject.models.CustomResponse;
-import com.example.sampleproject.models.StudentResponseModel;
+import com.example.sampleproject.models.*;
 import com.example.sampleproject.service.AppService;
+import com.example.sampleproject.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,8 +20,22 @@ public class AppController {
     @Autowired
     private AppService appService;
 
+    @Autowired
+    JwtService jwtService;
+
+    @PostConstruct
+    public void initRoleAndAdmin(){
+        appService.initRoleAndAdmin();
+    }
+
+
+    @PostMapping({"/authenticate"})
+    public JwtResponse createJwtToken(@RequestBody JwtRequest jwtRequest) throws Exception {
+        return jwtService.createJwtToken(jwtRequest);
+    }
+
     @PostMapping("/teacher/create")
-    public Teacher createTeacher(@RequestBody Teacher teacher){
+    public Object createTeacher(@RequestBody UserRequestModel teacher){
         return appService.saveTeacher(teacher);
     }
     @GetMapping("/teacher")
@@ -46,7 +60,7 @@ public class AppController {
     }
 
     @PostMapping("/student/create")
-    public Student createStudent(@RequestBody Student student){
+    public Object createStudent(@RequestBody UserRequestModel student){
         return appService.saveStudent(student);
     }
     @GetMapping("/student")
@@ -79,4 +93,22 @@ public class AppController {
        return appService.deleteFromAdvisoryList(model);
     }
 
+    @PostMapping("/user/password/change")
+    public String changePassword(@RequestBody PasswordModel passwordModel){
+        return appService.changePassword(passwordModel);
+    }
+
+    @DeleteMapping("user/delete")
+    public String deleteUser(@RequestParam String emailAddress){
+        return appService.deleteUser(emailAddress);
+    }
+
+    @PutMapping("user/deactivate")
+    public String deactivateUser(@RequestParam String emailAddress){
+        return appService.deactivateUser(emailAddress);
+    }
+    @PutMapping("user/activate")
+    public String activateUser(@RequestParam String emailAddress){
+        return appService.activateUser(emailAddress);
+    }
 }
