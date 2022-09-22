@@ -1,8 +1,12 @@
 package com.example.sampleproject.service;
 
+import com.example.sampleproject.entity.Student;
+import com.example.sampleproject.entity.Teacher;
 import com.example.sampleproject.entity.User;
 import com.example.sampleproject.models.JwtRequest;
 import com.example.sampleproject.models.JwtResponse;
+import com.example.sampleproject.repository.StudentRepository;
+import com.example.sampleproject.repository.TeacherRepository;
 import com.example.sampleproject.repository.UserRepository;
 import com.example.sampleproject.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +31,10 @@ public class JwtService implements UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private TeacherRepository teacherRepository;
+    @Autowired
+    private StudentRepository studentRepository;
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -41,12 +49,24 @@ public class JwtService implements UserDetailsService {
         UserDetails userDetails = loadUserByUsername(userName);
 
         User user = userRepository.findById(userName).get();
+        Teacher teacher = teacherRepository.findByEmail(userName);
+        Student student = studentRepository.findByEmail(userName);
+
+        Long id = 0L;
+
+        if (teacher != null){
+            id = teacher.getTeacherId();
+        }
+
+        if (student !=null){
+            id = student.getStudentId();
+        }
 
         if (user.isEnable()){
             String newGeneratedToken = jwtUtils.generateToken(userDetails);
-            return new JwtResponse(true,"Login Successful",user.getUserName(),user.getName(), newGeneratedToken);
+            return new JwtResponse(true,"Login Successful",user.getUserName(),user.getName(),id,user.getRoles().iterator().next().getRoleName(), newGeneratedToken);
         }else {
-            return new JwtResponse(false,"User Deactivated",user.getUserName(),user.getName(), "");
+            return new JwtResponse(false,"User Deactivated",user.getUserName(),user.getName(),id,user.getRoles().iterator().next().getRoleName(), "");
         }
     }
 

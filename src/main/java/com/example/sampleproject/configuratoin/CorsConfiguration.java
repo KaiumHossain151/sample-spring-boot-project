@@ -12,17 +12,17 @@ public class CorsConfiguration {
     private static final String PUT = "GET";
     private static final String DELETE = "GET";
 
-    @Bean
-    public WebMvcConfigurer corsConfigurer(){
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedMethods(GET,POST,PUT,DELETE)
-                        .allowedHeaders("*")
-                        .allowedOriginPatterns("*")
-                        .allowCredentials(true);
-            }
-        };
-    }
+//    @Bean
+//    public WebMvcConfigurer corsConfigurer(){
+//        return new WebMvcConfigurer() {
+//            @Override
+//            public void addCorsMappings(CorsRegistry registry) {
+//                registry.addMapping("/**")
+//                        .allowedMethods(GET,POST,PUT,DELETE)
+//                        .allowedHeaders("*")
+//                        .allowedOriginPatterns("*")
+//                        .allowCredentials(true);
+//            }
+//        };
+//    }
 }

@@ -1,6 +1,5 @@
 package com.example.sampleproject.controller;
 
-import com.example.sampleproject.entity.AdvisorRequest;
 import com.example.sampleproject.entity.Student;
 import com.example.sampleproject.entity.Teacher;
 import com.example.sampleproject.models.*;
@@ -10,11 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(origins = "*")
 public class AppController {
 
     @Autowired
@@ -44,14 +43,14 @@ public class AppController {
     }
 
 
-    @GetMapping("/teacher/assigned/students")
-    public List<StudentResponseModel> getAssignedStudents(@RequestParam Long id){
-        return appService.getAssignedStudents(id);
+    @PostMapping("/teacher/assigned/students")
+    public List<StudentResponseModel> getAssignedStudents(@RequestBody RequestModel model){
+        return appService.getAssignedStudents(model.getUserId());
     }
 
     @PostMapping("/assign/advisor")
-    public CustomResponse assignAdvisor(@RequestParam Long teacherId, @RequestParam Long studentId){
-        return appService.addStudentToTeacher(teacherId,studentId);
+    public CustomResponse assignAdvisor(@RequestBody AdvisorRequestModel model){
+        return appService.addStudentToTeacher(model.getTeacherId(), model.getStudentId());
     }
 
     @PutMapping("/teacher/update")
@@ -78,9 +77,9 @@ public class AppController {
         return appService.sendAdvisorRequest(model);
     }
 
-    @GetMapping("/advisor/request")
-    public List<StudentResponseModel> getAllRequestsForSpecificTeacher(@RequestParam Long teacherId){
-       return appService.getAllRequestsForSpecificTeacher(teacherId);
+    @PostMapping("/advisor/request")
+    public List<StudentResponseModel> getAllRequestsForSpecificTeacher(@RequestBody RequestModel requestModel){
+       return appService.getAllRequestsForSpecificTeacher(requestModel.getUserId());
     }
 
     @DeleteMapping("/advisor/request/delete")
@@ -99,16 +98,16 @@ public class AppController {
     }
 
     @DeleteMapping("user/delete")
-    public String deleteUser(@RequestParam String emailAddress){
-        return appService.deleteUser(emailAddress);
+    public String deleteUser(@RequestBody RequestModelEmail modelEmail ){
+        return appService.deleteUser(modelEmail.getEmail());
     }
 
     @PutMapping("user/deactivate")
-    public String deactivateUser(@RequestParam String emailAddress){
-        return appService.deactivateUser(emailAddress);
+    public String deactivateUser(@RequestBody RequestModelEmail modelEmail){
+        return appService.deactivateUser(modelEmail.getEmail());
     }
     @PutMapping("user/activate")
-    public String activateUser(@RequestParam String emailAddress){
-        return appService.activateUser(emailAddress);
+    public String activateUser(@RequestBody RequestModelEmail modelEmail){
+        return appService.activateUser(modelEmail.getEmail());
     }
 }

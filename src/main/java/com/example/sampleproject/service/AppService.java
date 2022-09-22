@@ -303,6 +303,13 @@ public class AppService {
 
         if (existingUser==null) {
             User user = new User();
+
+            Role role = roleRepository.findByRoleName("Admin");
+
+            Set<Role> userRoles = new HashSet<>();
+            userRoles.add(role);
+            user.setRoles(userRoles);
+
             user.setUserName("admin@gmail.com");
             user.setName("Admin User");
             user.setEnable(true);
